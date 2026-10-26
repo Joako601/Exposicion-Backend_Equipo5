@@ -1,0 +1,7 @@
+# MongoDB corre dentro de un contenedor: Docker ejecuta, MongoDB guarda.
+services:
+  mongo:
+    image: mongo:8
+    container_name: mongo-demo
+    ports:
+      - "27017:27017"

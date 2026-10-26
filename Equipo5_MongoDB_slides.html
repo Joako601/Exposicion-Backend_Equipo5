@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Equipo 5 · MongoDB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --slate:#001E2B; --ever:#023430; --forest:#00684A; --spring:#00ED64;
+  --mint:#E3FCF7; --paper:#F7FAF9; --line:#DDE5E2; --mute:#5C6C75; --ink:#0B1F27;
+  --red:#C2410C;
+  --display:'Barlow Condensed',"Arial Narrow",sans-serif;
+  --sans:'IBM Plex Sans',"Segoe UI",sans-serif;
+  --mono:'JetBrains Mono',Consolas,monospace;
+  --ease:cubic-bezier(.16,1,.3,1);
+}
+*{box-sizing:border-box;margin:0;padding:0;font-variant-ligatures:none!important}
+html,body{height:100%;background:#000;overflow:hidden}
+body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased;font-variant-ligatures:none}
+
+/* ---------- stage: fixed 1920x1080, scaled to fit with letterbox ---------- */
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center;background:var(--paper);overflow:hidden}
+.slide{position:absolute;inset:0;padding:110px 140px 120px;display:flex;flex-direction:column;
+  opacity:0;transform:translateX(70px);pointer-events:none;
+  transition:opacity .55s var(--ease),transform .9s var(--ease)}
+.slide.past{transform:translateX(-70px)}
+.slide.active{opacity:1;transform:none;pointer-events:auto}
+.slide.dark{background:var(--slate);color:#fff}
+.slide.light{background:var(--paper)}
+.slide.center{justify-content:center}
+
+/* entry reveal: staggered with --d, reset only after the slide has faded out */
+.rv{opacity:0;transform:translateY(28px);transition:opacity 0s .7s,transform 0s .7s}
+.active .rv{opacity:1;transform:none;transition:opacity .8s var(--ease) var(--d,0s),transform 1s var(--ease) var(--d,0s)}
+/* in-slide steps: hidden until the presenter advances */
+[data-step]{transition:opacity .6s var(--ease),transform .8s var(--ease),filter .6s}
+.fx-up[data-step]:not(.on){opacity:0;transform:translateY(30px)}
+.fx-fade[data-step]:not(.on){opacity:0}
+
+.kicker{font:600 22px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--forest);margin-bottom:22px}
+.dark .kicker{color:var(--spring)}
+h2{font:800 92px/.95 var(--display);text-transform:uppercase;letter-spacing:-.01em;color:var(--slate);text-wrap:balance}
+.dark h2{color:#fff}
+h2 em{font-style:normal;color:var(--forest)}
+.dark h2 em{color:var(--spring)}
+p,li{font-size:30px;line-height:1.4;text-wrap:pretty}
+.mute{color:var(--mute)}
+code,.mono{font-family:var(--mono)}
+.body{flex:1;display:flex;flex-direction:column;justify-content:center;margin-top:40px}
+
+/* ---------- chrome ---------- */
+#foot{position:absolute;left:140px;right:140px;bottom:44px;display:flex;justify-content:space-between;align-items:center;
+  font:600 18px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);z-index:5;transition:color .5s}
+#foot.ondark{color:rgba(255,255,255,.55)}
+#foot .who{display:flex;gap:14px;align-items:center}
+#foot .dot{width:10px;height:10px;border-radius:50%;background:var(--spring)}
+#bar{position:absolute;left:0;bottom:0;height:6px;background:var(--spring);transition:width .9s var(--ease);z-index:5}
+#foot.hide,#bar.hide{opacity:0}
+
+/* ---------- 01 cover ---------- */
+.cover{justify-content:center;align-items:flex-start}
+.cover .brace{position:absolute;top:50%;font:200 820px/1 var(--display);color:transparent;-webkit-text-stroke:3px rgba(0,237,100,.22);
+  transform:translateY(-54%);transition:transform 1.6s var(--ease),opacity 1.2s;opacity:0}
+.cover .brace.l{left:-40px}.cover .brace.r{right:-40px}
+.active.cover .brace{opacity:1}
+.cover:not(.active) .brace.l{transform:translate(160px,-54%)}
+.cover:not(.active) .brace.r{transform:translate(-160px,-54%)}
+.cover .leaf{width:76px;height:76px;fill:var(--spring);margin-bottom:34px}
+.cover h1{font:800 250px/.82 var(--display);letter-spacing:-.02em;text-transform:uppercase}
+.cover .sub{font-size:40px;margin-top:30px;color:#CFE9DF;max-width:1200px}
+.cover .team{display:flex;gap:56px;margin-top:90px}
+.cover .team div{font-size:24px;color:#fff;border-top:2px solid var(--spring);padding-top:16px;min-width:250px}
+.cover .team span{display:block;font:500 17px/1.6 var(--mono);color:rgba(255,255,255,.5);letter-spacing:.1em;text-transform:uppercase}
+.cover .meta{position:absolute;top:110px;right:140px;font:500 18px/1.7 var(--mono);color:rgba(255,255,255,.5);text-align:right;letter-spacing:.08em;text-transform:uppercase}
+
+/* ---------- 02 agenda ---------- */
+.agenda{display:grid;grid-template-columns:repeat(4,1fr);gap:40px;margin:auto 0}
+.agenda .blk{border-top:4px solid var(--slate);padding-top:26px}
+.agenda .blk:nth-child(3){border-color:var(--forest)}
+.agenda .n{font:800 150px/.8 var(--display);color:var(--line)}
+.agenda .name{font:700 56px/1 var(--display);text-transform:uppercase;margin:18px 0 22px;color:var(--slate)}
+.agenda ol{list-style:none}
+.agenda li{font-size:31px;padding:14px 0;border-bottom:1px solid var(--line)}
+.agenda .t{font:500 18px var(--mono);color:var(--mute);margin-top:20px;letter-spacing:.08em}
+
+/* ---------- 03 problem: table vs documents ---------- */
+.versus{display:grid;grid-template-columns:1.15fr 110px 1fr;align-items:center;margin-top:56px}
+.panel-label{font:600 20px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-bottom:18px}
+table.sql{border-collapse:collapse;width:100%;font-size:28px;background:#fff;box-shadow:0 1px 0 var(--line)}
+.sql th{background:var(--slate);color:#fff;font:600 22px var(--mono);padding:18px 16px;text-align:left}
+.sql td{padding:20px 16px;border-bottom:1px solid var(--line);transition:all .7s var(--ease)}
+.sql td.null{font:500 22px var(--mono);color:#A3B1B8;background:repeating-linear-gradient(135deg,#F1F4F3 0 10px,#fff 10px 20px)}
+.s3 .sql td.null.on{color:var(--red);background:#FFF1EA}
+.arrow{justify-self:center;width:70px;height:4px;background:var(--forest);position:relative}
+.arrow::after{content:"";position:absolute;right:-4px;top:-11px;border:13px solid transparent;border-left:20px solid var(--forest);border-right:0}
+.docs{display:flex;flex-direction:column;gap:18px}
+.doc{background:var(--slate);color:#E6F3EE;font:400 25px/1.5 var(--mono);padding:20px 26px;border-left:6px solid var(--spring)}
+.doc b{color:var(--spring);font-weight:600}
+.caption{display:grid;grid-template-columns:1.15fr 110px 1fr;margin-top:40px}
+.caption h3{font:700 36px/1 var(--display);text-transform:uppercase;color:var(--slate);margin-bottom:10px}
+.caption p{font-size:25px;color:var(--mute);max-width:640px}
+
+/* ---------- 04 rule ---------- */
+.quote{font:600 76px/1.05 var(--sans);letter-spacing:-.02em;color:var(--slate);margin-top:30px;max-width:1500px}
+.quote mark{background:linear-gradient(transparent 62%,rgba(0,237,100,.55) 62%);color:inherit;padding:0 6px}
+.src{font:500 20px var(--mono);color:var(--mute);margin-top:22px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:70px}
+.mod h3{font:700 44px/1 var(--display);text-transform:uppercase;color:var(--forest)}
+.mod p{font-size:27px;color:var(--mute);margin:14px 0 26px;max-width:700px}
+.box{border:2px solid var(--slate);padding:18px 22px 22px;font:500 22px var(--mono);position:relative;background:#fff}
+.box .lbl{color:var(--mute);font-size:18px;margin-bottom:12px}
+.chip{display:inline-block;font:500 22px var(--mono);background:var(--forest);color:#fff;padding:12px 20px}
+.chip.ghost{background:transparent;color:var(--slate);border:2px dashed var(--slate)}
+.ref{display:flex;align-items:center;gap:22px}
+.ref .line{flex:0 0 70px;height:3px;background:var(--slate)}
+
+/* ---------- 05 pieces ---------- */
+.flow{display:grid;grid-template-columns:1fr 1fr 1.25fr;gap:0;margin-top:60px;align-items:stretch;position:relative}
+.piece{padding:34px 34px 30px;position:relative}
+.piece h3{font:700 44px/1 var(--display);text-transform:uppercase;margin:14px 0 14px}
+.piece p{font-size:25px}
+.piece .tag{font:600 18px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.piece.c1{background:#fff;border:2px solid var(--line)}
+.piece.c2{background:var(--forest);color:#fff}.piece.c2 .tag{color:rgba(255,255,255,.65)}
+.piece.c3{background:var(--slate);color:#fff}.piece.c3 .tag{color:var(--spring)}
+.pill{display:block;font:500 20px var(--mono);border:1px solid var(--line);padding:9px 14px;margin-top:10px;width:fit-content}
+.c2 .pill{border-color:rgba(255,255,255,.35)}
+.nest{margin-top:20px;border:1px solid rgba(255,255,255,.3);padding:14px;font:500 19px var(--mono);color:rgba(255,255,255,.7)}
+.nest .nest{margin-top:10px}
+.nest .leafdoc{margin-top:10px;background:var(--spring);color:var(--slate);padding:12px 14px;font-weight:600}
+.env{grid-column:2;margin-top:26px;border:2px dashed var(--forest);padding:22px 26px;background:#fff;position:relative}
+.env::before{content:"";position:absolute;left:50%;top:-28px;height:26px;border-left:2px dashed var(--forest)}
+.env h3{font:700 34px/1 var(--display);text-transform:uppercase;color:var(--forest)}
+.env p{font-size:23px;margin-top:8px}
+.env code{font-size:21px;color:var(--mute)}
+
+/* ---------- 06 steps ---------- */
+.steps{display:grid;grid-template-columns:repeat(5,1fr);margin-top:80px;position:relative}
+.steps .track{position:absolute;left:0;right:0;top:46px;height:4px;background:var(--line)}
+.steps .track i{position:absolute;inset:0;background:var(--forest);transform-origin:left;transform:scaleX(0);transition:transform 1.8s var(--ease) .3s}
+.active .steps .track i{transform:scaleX(1)}
+.st{padding-right:30px;position:relative}
+.st .num{width:96px;height:96px;border-radius:50%;background:var(--paper);border:4px solid var(--forest);display:grid;place-items:center;
+  font:800 46px var(--display);color:var(--forest);position:relative}
+.st:last-child .num{background:var(--forest);color:#fff}
+.st h3{font:700 42px/1 var(--display);text-transform:uppercase;margin:30px 0 12px;color:var(--slate)}
+.st p{font-size:25px;color:var(--mute)}
+.term{margin-top:70px;background:var(--slate);color:#D5E8E0;font:400 25px/1.75 var(--mono);padding:30px 40px;display:flex;justify-content:space-between;align-items:flex-end}
+.term .p{color:var(--spring)}
+.term small{font:500 19px var(--mono);color:rgba(255,255,255,.5);text-align:right}
+
+/* ---------- 07 dictionary ---------- */
+.dict{margin-top:50px;display:grid;grid-template-columns:1fr 90px 1fr;row-gap:0}
+.dict .h{font:600 20px var(--mono);letter-spacing:.12em;text-transform:uppercase;padding-bottom:16px;border-bottom:3px solid var(--slate)}
+.dict .h.r{color:var(--forest);border-color:var(--forest)}
+.dict .c{font:500 31px/1.2 var(--mono);padding:20px 0;border-bottom:1px solid var(--line);display:flex;align-items:center}
+.dict .c.r{color:var(--forest);font-weight:600}
+.dict .eq{display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--line);color:var(--mute);font:500 30px var(--mono)}
+.dict .note{font:400 21px var(--sans);color:var(--mute);margin-left:18px}
+.dict .row{display:contents}
+.dict .row.hl .c,.dict .row.hl .eq{background:var(--mint)}
+
+/* ---------- 08 code ---------- */
+.codegrid{display:grid;grid-template-columns:1.45fr 1fr;gap:50px;margin-top:50px;align-items:start}
+.editor{background:var(--slate);color:#D5E8E0;font:400 25px/1.75 var(--mono);position:relative}
+.editor .tb{display:flex;gap:10px;align-items:center;padding:16px 24px;border-bottom:1px solid rgba(255,255,255,.1);font-size:18px;color:rgba(255,255,255,.5)}
+.editor .tb i{width:13px;height:13px;border-radius:50%;background:rgba(255,255,255,.2)}
+.editor pre{padding:22px 0;font:inherit;white-space:normal}
+.editor .ln{display:block;white-space:pre;padding:0 30px;border-left:5px solid transparent;transition:background .5s,border-color .5s,opacity .5s}
+.editor.focus .ln{opacity:.38}
+.editor .ln.hit{opacity:1;background:rgba(0,237,100,.1);border-left-color:var(--spring)}
+.k{color:#7DD3FC}.s{color:#FDE68A}.f{color:var(--spring)}.c{color:#6B8A99}
+.notes-list{list-style:none;counter-reset:n}
+.notes-list li{display:grid;grid-template-columns:64px 1fr;gap:18px;align-items:start;padding:18px 0;border-bottom:1px solid var(--line);font-size:27px;transition:opacity .5s}
+.notes-list li b{font:800 40px/1 var(--display);color:var(--forest)}
+.resp{margin-top:26px;background:#fff;border:2px solid var(--line);font:400 22px/1.55 var(--mono);padding:18px 24px;color:var(--slate)}
+.resp .st200{display:inline-block;background:var(--spring);color:var(--slate);font-weight:600;padding:2px 10px;margin-bottom:8px}
+
+/* ---------- 09 demo ---------- */
+.live{display:inline-flex;align-items:center;gap:14px;font:600 20px var(--mono);letter-spacing:.14em;color:var(--spring);border:2px solid var(--spring);padding:10px 18px;margin-bottom:26px;width:fit-content}
+.live i{width:12px;height:12px;border-radius:50%;background:#FF5A4E;animation:pulse 1.4s infinite}
+@keyframes pulse{50%{opacity:.25}}
+.demo{display:grid;grid-template-columns:1fr 1.1fr;gap:60px;margin-top:40px}
+.dsteps{list-style:none}
+.dsteps li{display:grid;grid-template-columns:56px 1fr;gap:10px;font-size:27px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.12);color:#CFE2DA}
+.dsteps li span{font:600 22px var(--mono);color:var(--spring)}
+.dsteps li code{color:#fff;font-size:22px}
+.shell{background:#000F16;border:1px solid rgba(255,255,255,.12);font:400 22px/1.6 var(--mono);color:#CFE2DA;padding:26px 30px}
+.shell .p{color:var(--spring)}
+.shell .ok{color:var(--spring)}
+.shell .dim{color:rgba(255,255,255,.4)}
+.shell .new{background:rgba(0,237,100,.16);color:#fff}
+
+/* ---------- 10 vs course ---------- */
+.vs{display:grid;grid-template-columns:repeat(2,1fr);gap:0;margin-top:50px;border-top:3px solid var(--slate)}
+.vs .cell{padding:34px 40px 34px 0;border-bottom:1px solid var(--line)}
+.vs .cell:nth-child(odd){border-right:1px solid var(--line)}
+.vs .cell:nth-child(even){padding-left:40px}
+.vs .rel{font:600 19px var(--mono);letter-spacing:.12em;text-transform:uppercase;padding:6px 12px;display:inline-block}
+.rel.comp{background:var(--slate);color:#fff}
+.rel.comb{background:var(--spring);color:var(--slate)}
+.vs h3{font:800 58px/1 var(--display);text-transform:uppercase;margin:18px 0 12px;color:var(--slate)}
+.vs p{font-size:26px;color:var(--mute)}
+
+/* ---------- 11 gains / costs ---------- */
+.ledger{display:grid;grid-template-columns:1fr 1fr;gap:70px;margin-top:40px}
+.ledger h3{font:800 54px/1 var(--display);text-transform:uppercase;padding-bottom:16px;border-bottom:4px solid var(--forest);color:var(--forest)}
+.ledger .cost h3{border-color:var(--slate);color:var(--slate)}
+.ledger dl{margin-top:8px}
+.ledger dt{font:700 34px/1 var(--display);text-transform:uppercase;margin-top:26px;color:var(--slate)}
+.ledger dd{font-size:26px;color:var(--mute);margin-top:8px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);margin-top:56px;background:var(--slate);color:#fff}
+.stats div{padding:26px 36px;border-right:1px solid rgba(255,255,255,.12)}
+.stats b{display:block;font:800 76px/1 var(--display);color:var(--spring)}
+.stats span{font:500 19px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+.stats .lead{grid-column:1/-1;padding:16px 36px;border-bottom:1px solid rgba(255,255,255,.12);font:600 18px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+
+/* ---------- 12 spectrum ---------- */
+.spec{margin-top:80px;position:relative}
+.spec .axis{height:10px;background:linear-gradient(90deg,var(--spring),var(--forest) 48%,var(--slate) 52%,#41535B);transform-origin:left;transform:scaleX(0);transition:transform 1.4s var(--ease) .2s}
+.active .spec .axis{transform:scaleX(1)}
+.spec .ends{display:flex;justify-content:space-between;margin-bottom:18px;font:600 21px var(--mono);letter-spacing:.12em;text-transform:uppercase}
+.spec .ends span:first-child{color:var(--forest)}
+.cases{display:grid;grid-template-columns:repeat(2,1fr);gap:0 120px;margin-top:40px}
+.cases .col{display:flex;flex-direction:column;gap:22px}
+.case{padding:22px 26px;background:#fff;border:2px solid var(--line)}
+.case h4{font:700 32px/1 var(--display);text-transform:uppercase;color:var(--slate)}
+.case p{font-size:23px;color:var(--mute);margin-top:8px}
+.case.yes{border-color:var(--forest)}
+.case.no{background:var(--slate);border-color:var(--slate)}
+.case.no h4{color:#fff}.case.no p{color:rgba(255,255,255,.65)}
+
+/* ---------- 13 sources ---------- */
+.srcs{list-style:none;margin-top:50px;counter-reset:s}
+.srcs li{display:grid;grid-template-columns:90px 1fr;gap:20px;padding:26px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.srcs li::before{counter-increment:s;content:"0" counter(s);font:800 54px/1 var(--display);color:var(--forest)}
+.srcs h4{font:700 36px/1.1 var(--display);text-transform:uppercase;color:var(--slate)}
+.srcs p{font-size:23px;color:var(--mute);margin-top:4px}
+.srcs a{font:500 20px var(--mono);color:var(--forest);text-decoration:none;word-break:break-all}
+
+/* ---------- 14 close ---------- */
+.close{justify-content:center}
+.close h2{font-size:220px;line-height:.85}
+.close .take{font:500 46px/1.3 var(--sans);color:#CFE9DF;margin-top:40px;max-width:1300px}
+.close .take mark{background:none;color:var(--spring)}
+.close .repo{position:absolute;bottom:110px;left:140px;font:500 22px var(--mono);color:rgba(255,255,255,.55)}
+
+.notes{display:none}
+#hint{position:fixed;right:16px;bottom:12px;font:12px var(--mono);color:rgba(255,255,255,.35);z-index:9}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01s!important;animation:none!important}}
+
+/* static mode (?static) and print: every step shown, no motion */
+.static .slide,.static .rv,.static [data-step]{transition:none!important}
+.static [data-step]{opacity:1!important;transform:none!important}
+@media print{
+  @page{size:1920px 1080px;margin:0}
+  html,body{overflow:visible;height:auto;background:none}
+  #stage{position:static;transform:none!important;width:1920px;height:auto;background:none}
+  .slide{position:relative;width:1920px;height:1080px;opacity:1!important;transform:none!important;page-break-after:always;break-after:page}
+  .rv,[data-step]{opacity:1!important;transform:none!important;transition:none!important}
+  .steps .track i,.spec .axis{transform:none!important}
+  .cover .brace{opacity:1!important;transform:translateY(-54%)!important}
+  #foot,#bar,#hint{display:none}
+  .slide .pfoot{display:flex!important}
+}
+.pfoot{display:none;position:absolute;left:140px;right:140px;bottom:44px;justify-content:space-between;font:600 18px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.dark .pfoot{color:rgba(255,255,255,.5)}
+</style>
+</head>
+<body>
+<div id="stage">
+
+<!-- 01 · COVER -->
+<section class="slide dark cover" data-speaker="Ariff" data-time="0:00 – 0:25" data-title="Portada">
+  <div class="brace l">{</div><div class="brace r">}</div>
+  <div class="meta rv" style="--d:.9s">Unidad II · Exposición<br>26 · oct · 2026</div>
+  <svg class="leaf rv" style="--d:.2s" viewBox="0 0 24 24" aria-label="MongoDB"><path d="M17.193 9.555c-1.264-5.58-4.252-7.414-4.573-8.115-.28-.394-.53-.954-.735-1.44-.036.495-.055.685-.523 1.184-.723.566-4.438 3.682-4.74 10.02-.282 5.912 4.27 9.435 4.888 9.884l.07.05A73.49 73.49 0 0111.91 24h.481c.114-1.032.284-2.056.51-3.07.417-.296.604-.463.85-.693a11.342 11.342 0 003.639-8.464c.01-.814-.103-1.662-.197-2.218zm-5.336 8.195s0-8.291.275-8.29c.213 0 .49 10.695.49 10.695-.381-.045-.765-1.76-.765-2.405z"/></svg>
+  <h1 class="rv" style="--d:.3s">MongoDB</h1>
+  <p class="sub rv" style="--d:.5s">Guardar documentos cuando las filas de MySQL no son la forma natural de los datos.</p>
+  <div class="team rv" style="--d:.75s">
+    <div><span>01</span>Ariff Iazid Medina Gómez</div>
+    <div><span>02</span>Joaquin Uriona</div>
+    <div><span>03</span>Jesus Fernando Castro Hernandez</div>
+    <div><span>04</span>Mateo Emanuel Martin Tec</div>
+  </div>
+  <div class="pfoot"><span>Equipo 5 · Fundamentos de Arquitectura de Software y Desarrollo Backend</span><span>01</span></div>
+  <aside class="notes">Buenos días. Somos el equipo 5: Joaquín, Jesús, Mateo y yo, Ariff. Hoy les presentamos MongoDB, una base de datos que guarda documentos en lugar de filas. Vamos a responder una sola pregunta: ¿qué hacemos cuando los datos de nuestra API no tienen forma de tabla?</aside>
+</section>
+
+<!-- 02 · AGENDA -->
+<section class="slide light" data-speaker="Ariff" data-time="0:25 – 0:45" data-title="Orden">
+  <div class="kicker rv">Orden de la exposición · 10 min</div>
+  <h2 class="rv" style="--d:.1s">Cuatro bloques, <em>cuatro voces</em></h2>
+  <div class="agenda">
+    <div class="blk rv" style="--d:.25s"><div class="n">01</div><div class="name">Ariff</div><ol><li>El problema</li><li>La regla para modelar</li></ol></div>
+    <div class="blk rv" style="--d:.35s"><div class="n">02</div><div class="name">Joaquín</div><ol><li>Las piezas</li><li>Cinco pasos</li><li>MySQL ↔ MongoDB</li></ol></div>
+    <div class="blk rv" style="--d:.45s"><div class="n">03</div><div class="name">Jesús</div><ol><li>Ejemplo en código</li><li>Demo en vivo</li></ol></div>
+    <div class="blk rv" style="--d:.55s"><div class="n">04</div><div class="name">Mateo</div><ol><li>Frente al curso</li><li>Gana y cuesta</li><li>Cuándo no · fuentes</li></ol></div>
+  </div>
+  <div class="pfoot"><span>Equipo 5 · MongoDB</span><span>02</span></div>
+  <aside class="notes">Vamos en cuatro bloques. Yo explico el problema y la idea para modelar. Joaquín, las piezas y cómo se configura. Jesús, un ejemplo con una API como la del curso y una demo en vivo. Y Mateo cierra con la comparación contra lo que ya vimos, qué ganamos, qué cuesta y cuándo no usarlo.</aside>
+</section>
+
+<!-- 03 · PROBLEM -->
+<section class="slide light s3" data-speaker="Ariff" data-time="0:45 – 1:45" data-title="El problema">
+  <div class="kicker rv">01 · El problema</div>
+  <h2 class="rv" style="--d:.1s">Cuando la fila <em>no es la forma</em></h2>
+  <div class="versus">
+    <div class="rv" style="--d:.25s">
+      <div class="panel-label">MySQL · tabla productos</div>
+      <table class="sql">
+        <tr><th>nombre</th><th>precio</th><th>talla</th><th>voltaje</th><th>páginas</th></tr>
+        <tr><td>Playera</td><td>199</td><td>M</td><td class="null" data-step="1">NULL</td><td class="null" data-step="1">NULL</td></tr>
+        <tr><td>Lámpara</td><td>450</td><td class="null" data-step="1">NULL</td><td>127 V</td><td class="null" data-step="1">NULL</td></tr>
+        <tr><td>Libro</td><td>320</td><td class="null" data-step="1">NULL</td><td class="null" data-step="1">NULL</td><td>280</td></tr>
+      </table>
+    </div>
+    <div class="arrow fx-fade" data-step="2"></div>
+    <div>
+      <div class="panel-label fx-fade" data-step="2">MongoDB · colección productos</div>
+      <div class="docs">
+        <div class="doc fx-up" data-step="2" style="transition-delay:.05s">{ nombre: "Playera", precio: 199,<br>&nbsp;&nbsp;<b>talla: "M"</b> }</div>
+        <div class="doc fx-up" data-step="2" style="transition-delay:.18s">{ nombre: "Lámpara", precio: 450,<br>&nbsp;&nbsp;<b>voltaje: "127 V"</b> }</div>
+        <div class="doc fx-up" data-step="2" style="transition-delay:.31s">{ nombre: "Libro", precio: 320,<br>&nbsp;&nbsp;<b>paginas: 280</b> }</div>
+      </div>
+    </div>
+  </div>
+  <div class="caption">
+    <div class="fx-fade" data-step="1"><h3>Esquema fijo</h3><p>6 de 15 celdas vacías. Cada tipo nuevo de producto agrega una columna para todos.</p></div>
+    <div></div>
+    <div class="fx-fade" data-step="2"><h3 style="color:var(--forest)">Esquema flexible</h3><p>Cada documento lleva solo sus campos. Todos viven en la misma colección.</p></div>
+  </div>
+  <div class="pfoot"><span>Equipo 5 · MongoDB</span><span>03</span></div>
+  <aside class="notes">Imaginen la tabla productos de una tienda en MySQL. Una playera tiene talla, una lámpara tiene voltaje, un libro tiene páginas. [AVANZAR] En una tabla todas las columnas existen para todas las filas: la playera carga un voltaje NULL y la lámpara unas páginas NULL. Seis de quince celdas vacías. Con tres productos no pasa nada; con doscientos tipos, la tabla se llena de columnas vacías o terminamos con una tabla por tipo. [AVANZAR] MongoDB lo resuelve guardando cada producto como un documento, parecido a un JSON. Cada documento trae solo sus campos y todos viven en la misma colección. Eso es exactamente lo que dice la actividad: cuando las filas de MySQL no son la forma natural de los datos.</aside>
+</section>
+
+<!-- 04 · MODELING RULE -->
+<section class="slide light center" data-speaker="Ariff" data-time="1:45 – 2:30" data-title="La regla para modelar">
+  <div class="kicker rv">01 · La regla para modelar</div>
+  <p class="quote rv" style="--d:.15s">Lo que se consulta <mark>junto</mark>, se guarda <mark>junto</mark>.</p>
+  <p class="src rv" style="--d:.3s">— MongoDB Docs, Data Modeling (traducción del equipo)</p>
+  <div class="two">
+    <div class="mod rv" style="--d:.45s">
+      <h3>Embeber</h3>
+      <p>Si siempre se leen juntos, el departamento va dentro del empleado. Una consulta, sin JOIN.</p>
+      <div class="box"><div class="lbl">empleado</div><span class="chip">departamento: { … }</span></div>
+    </div>
+    <div class="mod fx-up" data-step="1">
+      <h3>Referenciar</h3>
+      <p>Lo que crece sin límite va aparte: el producto guarda sus 5 reseñas recientes y el resto vive en otra colección.</p>
+      <div class="ref"><div class="box"><div class="lbl">producto</div><span class="chip">5 recientes</span></div><div class="line"></div><span class="chip ghost">reseñas · otra colección</span></div>
+    </div>
+  </div>
+  <div class="pfoot"><span>Equipo 5 · MongoDB</span><span>04</span></div>
+  <aside class="notes">La documentación oficial resume cómo modelar en una frase: lo que se consulta junto, se guarda junto. Hay dos herramientas. Embeber: si siempre leo al empleado con su departamento, meto el departamento dentro del empleado y llega en una sola consulta, sin JOIN. [AVANZAR] Referenciar: si algo crece sin límite, como las reseñas de un producto, guardo solo las cinco más recientes adentro y el resto vive en otra colección. Con esto le paso a Joaquín, que nos va a mostrar con qué piezas se trabaja.</aside>
+</section>
+
+<!-- 05 · PIECES -->
+<section class="slide light" data-speaker="Joaquín" data-time="2:30 – 3:20" data-title="Las piezas">
+  <div class="kicker rv">02 · Las piezas</div>
+  <h2 class="rv" style="--d:.1s">Del código <em>a la base</em></h2>
+  <div class="flow">
+    <div class="piece c1 rv" style="--d:.25s">
+      <div class="tag">Cliente</div><h3>API Node.js</h3><p>Recibe la petición HTTP y pide los datos.</p>
+      <span class="pill">GET /productos/:sku</span><span class="pill">POST /productos</span>
+    </div>
+    <div class="piece c2 rv" style="--d:.45s">
+      <div class="tag">Driver</div><h3>mongodb</h3><p>Librería oficial: traduce el código en operaciones sobre la base.</p>
+      <span class="pill">npm install mongodb</span>
+    </div>
+    <div class="piece c3 rv" style="--d:.65s">
+      <div class="tag">Servidor</div><h3>Atlas o Docker</h3><p>En la nube (Atlas) o en un contenedor local.</p>
+      <div class="nest">base · tienda<div class="nest">colección · productos<div class="leafdoc">documento { sku: "PLY-01" }</div></div></div>
+    </div>
+    <div class="env fx-up" data-step="1">
+      <h3>Archivo .env</h3><p>La cadena de conexión, fuera del código y fuera de GitHub.</p><code>MONGO_URI=mongodb+srv://…</code>
+    </div>
+  </div>
+  <div class="pfoot"><span>Equipo 5 · MongoDB</span><span>05</span></div>
+  <aside class="notes">Gracias. Son cuatro piezas. El cliente es nuestra API en Node.js, la que recibe las peticiones HTTP. El driver es la librería oficial; se instala con npm install mongodb y traduce nuestro código en operaciones sobre la base. El servidor puede ser MongoDB Atlas en la nube o un contenedor local; adentro hay una jerarquía: una base, como tienda; colecciones, como productos; y documentos. [AVANZAR] Y la cuarta pieza: el archivo .env, que guarda la cadena de conexión fuera del código, igual que hacíamos con las credenciales de MySQL.</aside>
+</section>
+
+<!-- 06 · FIVE STEPS -->
+<section class="slide light" data-speaker="Joaquín" data-time="3:20 – 4:10" data-title="Cinco pasos">
+  <div class="kicker rv">02 · Cómo se usa</div>
+  <h2 class="rv" style="--d:.1s">Cinco pasos <em>con Atlas</em></h2>
+  <div class="steps">
+    <div class="track"><i></i></div>
+    <div class="st rv" style="--d:.3s"><div class="num">1</div><h3>Cluster</h3><p>Crear un cluster gratuito en MongoDB Atlas.</p></div>
+    <div class="st rv" style="--d:.5s"><div class="num">2</div><h3>Usuario</h3><p>Crear el usuario de la base y su contraseña.</p></div>
+    <div class="st rv" style="--d:.7s"><div class="num">3</div><h3>Cadena</h3><p>Copiar la cadena y cambiar &lt;db_password&gt;.</p></div>
+    <div class="st rv" style="--d:.9s"><div class="num">4</div><h3>Driver</h3><p>Instalar el paquete mongodb con npm.</p></div>
+    <div class="st rv" style="--d:1.1s"><div class="num">5</div><h3>CRUD</h3><p>Crear el MongoClient: insertar, leer, cambiar, borrar.</p></div>
+  </div>
+  <div class="term rv" style="--d:1.3s">
+    <div><span class="p">$</span> npm install mongodb<br>const client = new MongoClient(process.env.MONGO_URI);</div>
+    <small>Requisito del driver<br>Node.js 16.20.1 o superior</small>
+  </div>
+  <div class="pfoot"><span>Equipo 5 · MongoDB</span><span>06</span></div>
+  <aside class="notes">Para usarlo con Atlas son cinco pasos. Uno: crear un cluster gratuito. Dos: crear un usuario de base de datos con su contraseña. Tres: copiar la cadena de conexión y reemplazar db_password. Cuatro: instalar el driver con npm. Y cinco: crear el MongoClient; a partir de ahí ya podemos insertar, consultar, modificar y borrar. El único requisito del driver es Node 16.20.1 o superior. Si no quieren nube, los pasos uno a tres se cambian por un contenedor de Docker, que es lo que vamos a usar en la demo.</aside>
+</section>
+
+<!-- 07 · DICTIONARY -->
+<section class="slide light" data-speaker="Joaquín" data-time="4:10 – 5:00" data-title="MySQL ↔ MongoDB">
+  <div class="kicker rv">02 · Mismo concepto, otro nombre</div>
+  <h2 class="rv" style="--d:.1s">De MySQL <em>a MongoDB</em></h2>
+  <div class="dict">
+    <div class="h rv" style="--d:.2s">MySQL</div><div class="rv" style="--d:.2s"></div><div class="h r rv" style="--d:.2s">MongoDB</div>
+    <div class="row rv" style="--d:.3s"><div class="c">tabla</div><div class="eq">→</div><div class="c r">colección</div></div>
+    <div class="row rv" style="--d:.38s"><div class="c">fila</div><div class="eq">→</div><div class="c r">documento</div></div>
+    <div class="row rv" style="--d:.46s"><div class="c">columna</div><div class="eq">→</div><div class="c r">campo</div></div>
+    <div class="row rv" style="--d:.54s"><div class="c">WHERE precio &lt;= 350</div><div class="eq">→</div><div class="c r">{ precio: { $lte: 350 } }</div></div>
+    <div class="row hl fx-up" data-step="1"><div class="c">JOIN</div><div class="eq">→</div><div class="c r">embeber <span class="note">o $lookup si hace falta</span></div></div>
+    <div class="row hl fx-up" data-step="1" style="transition-delay:.12s"><div class="c">ALTER TABLE</div><div class="eq">→</div><div class="c r">$set <span class="note">agrega el campo al documento</span></div></div>
+  </div>
+  <div class="pfoot"><span>Equipo 5 · MongoDB</span><span>07</span></div>
+  <aside class="notes">Para que no suene a idioma nuevo, aquí está el diccionario. Una tabla es una colección, una fila es un documento, una columna es un campo. El WHERE precio menor o igual a 350 se escribe como un objeto con el operador $lte. [AVANZAR] Y lo más distinto: donde en MySQL hacíamos JOIN, aquí normalmente embebemos, y si de verdad hace falta existe $lookup. Y no hay ALTER TABLE: un $set agrega el campo solo en el documento que lo necesita. Jesús les va a mostrar esto funcionando.</aside>
+</section>
+
+<!-- 08 · CODE -->
+<section class="slide light" data-speaker="Jesús" data-time="5:00 – 5:45" data-title="Ejemplo en código">
+  <div class="kicker rv">03 · Ejemplo</div>
+  <h2 class="rv" style="--d:.1s">Una API <em>de productos</em></h2>
+  <div class="codegrid">
+    <div class="rv" style="--d:.25s">
+      <div class="editor" id="ed">
+        <div class="tb"><i></i><i></i><i></i>&nbsp; demo/server.js</div>
+<pre><span class="ln" data-l="1"><span class="k">import</span> { MongoClient } <span class="k">from</span> <span class="s">'mongodb'</span>;</span>
+<span class="ln" data-l="1"><span class="k">const</span> client = <span class="k">new</span> <span class="f">MongoClient</span>(process.env.MONGO_URI);</span>
+<span class="ln" data-l="2"><span class="k">const</span> productos = client.<span class="f">db</span>(<span class="s">'tienda'</span>)</span>
+<span class="ln" data-l="2">  .<span class="f">collection</span>(<span class="s">'productos'</span>);</span>
+<span class="ln"> </span>
+<span class="ln" data-l="3">app.<span class="f">get</span>(<span class="s">'/productos/:sku'</span>, <span class="k">async</span> (req, res) =&gt; {</span>
+<span class="ln" data-l="3">  <span class="k">const</span> p = <span class="k">await</span> productos.<span class="f">findOne</span>({ sku: req.params.sku });</span>
+<span class="ln" data-l="4">  p ? res.<span class="f">json</span>(p) : res.<span class="f">sendStatus</span>(<span class="s">404</span>);</span>
+<span class="ln" data-l="3">});</span></pre>
+      </div>
+      <div class="resp fx-up" data-step="4"><span class="st200">200</span> GET /productos/PLY-01<br>{ "sku": "PLY-01", "nombre": "Playera", "precio": 199, "talla": "M" }</div>
+    </div>
+    <ol class="notes-list">
+      <li class="fx-up" data-step="1"><b>1</b>La cadena de conexión sale del .env.</li>
+      <li class="fx-up" data-step="2"><b>2</b>Base y colección; se crean con el primer insert.</li>
+      <li class="fx-up" data-step="3"><b>3</b>El filtro es un objeto, no SQL concatenado.</li>
+      <li class="fx-up" data-step="4"><b>4</b>El documento ya es JSON: sale tal cual.</li>
+    </ol>
+  </div>
+  <div class="pfoot"><span>Equipo 5 · MongoDB</span><span>08</span></div>
+  <aside class="notes">Este es un endpoint de nuestra API de productos; es el mismo código de la demo. [AVANZAR] Primero, la cadena de conexión sale del .env, nunca escrita en el código. [AVANZAR] Segundo, elegimos la base tienda y la colección productos; si no existen, MongoDB las crea con el primer insert. [AVANZAR] Tercero, findOne busca por sku. El filtro es un objeto, no un texto de SQL, así que no armamos consultas concatenando strings. [AVANZAR] Y cuarto, el documento ya es JSON: lo devolvemos tal cual, sin mapear filas a objetos.</aside>
+</section>
+
+<!-- 09 · DEMO -->
+<section class="slide dark" data-speaker="Jesús" data-time="5:45 – 7:30" data-title="Demo en vivo">
+  <div class="live rv"><i></i>EN VIVO</div>
+  <h2 class="rv" style="--d:.1s">Caso práctico: <em>3 productos, 1 colección</em></h2>
+  <div class="demo">
+    <ol class="dsteps rv" style="--d:.3s">
+      <li><span>00</span><div><code>docker compose up -d</code> · <code>npm start</code></div></li>
+      <li><span>01</span>POST playera con talla</li>
+      <li><span>02</span>POST lámpara con voltaje</li>
+      <li><span>03</span>POST libro con autor embebido</li>
+      <li><span>04</span>GET todo: tres formas, una colección</li>
+      <li><span>05</span>GET ?maxPrecio=350 → $lte</li>
+      <li><span>06</span>PATCH: agregar colores sin ALTER TABLE</li>
+      <li><span>07</span>POST sin precio → 400</li>
+    </ol>
+    <div class="shell rv" style="--d:.5s">
+<span class="p">$</span> npm run demo<br>
+<span class="dim">6. Agregar un campo nuevo sin ALTER TABLE</span><br>
+<span class="dim">PATCH /productos/PLY-01 {"colores":["negro","blanco"]}</span><br>
+<span class="ok">→ 200</span> {<br>
+&nbsp;&nbsp;"sku": "PLY-01",<br>
+&nbsp;&nbsp;"nombre": "Playera",<br>
+&nbsp;&nbsp;"precio": 199,<br>
+&nbsp;&nbsp;"talla": "M",<br>
+&nbsp;&nbsp;<span class="new">"colores": ["negro", "blanco"]</span><br>
+}<br>
+<span class="dim">7. Validación en la API: falta el precio</span><br>
+<span class="ok" style="color:#FF8A7A">→ 400</span> { "error": "precio debe ser un número &gt;= 0" }
+    </div>
+  </div>
+  <div class="pfoot"><span>Equipo 5 · MongoDB</span><span>09</span></div>
+  <aside class="notes">Ahora en vivo. Tenemos MongoDB corriendo en un contenedor de Docker y la API en el puerto 3000. [CAMBIAR A LA TERMINAL Y CORRER npm run demo] Inserto una playera con talla… una lámpara con voltaje… y un libro con su autor embebido. Listo todo: tres formas distintas en la misma colección. Filtro por precio menor o igual a 350: salen la playera y el libro. Ahora le agrego colores a la playera: sin migración, sin ALTER TABLE. Y si mando un producto sin precio, la API responde 400: esa validación la pusimos nosotros, porque MongoDB por defecto no la exige. [PLAN B: si la demo falla, quedarse en esta slide; la terminal de la derecha es la salida real.] Con eso, Mateo nos dice cómo se compara con lo que ya vimos.</aside>
+</section>
+
+<!-- 10 · VS COURSE -->
+<section class="slide light" data-speaker="Mateo" data-time="7:30 – 8:15" data-title="Frente al curso">
+  <div class="kicker rv">04 · Frente a lo que ya vimos</div>
+  <h2 class="rv" style="--d:.1s">Compite con uno, <em>se combina con tres</em></h2>
+  <div class="vs">
+    <div class="cell rv" style="--d:.25s"><span class="rel comp">Compite</span><h3>MySQL</h3><p>Los dos guardan y consultan. MySQL fija tablas y une con JOIN; MongoDB guarda documentos y embebe.</p></div>
+    <div class="cell rv" style="--d:.35s"><span class="rel comb">Se combina</span><h3>Docker</h3><p>Docker ejecuta, MongoDB guarda. En la demo, Mongo corría en un contenedor.</p></div>
+    <div class="cell rv" style="--d:.45s"><span class="rel comb">Se combina</span><h3>GraphQL</h3><p>GraphQL define el contrato de la API; el resolver hace el findOne.</p></div>
+    <div class="cell rv" style="--d:.55s"><span class="rel comb">Se combina</span><h3>Token y permisos</h3><p>Dos candados: la API valida el token; MongoDB exige su propio usuario con permisos por base.</p></div>
+  </div>
+  <div class="pfoot"><span>Equipo 5 · MongoDB</span><span>10</span></div>
+  <aside class="notes">Gracias. Frente a lo que ya vimos en el curso: con MySQL compite; los dos guardan y consultan, pero uno usa tablas y JOIN y el otro documentos. Con los otros tres se combina. Docker ejecuta y MongoDB guarda: justo en la demo Mongo corría en un contenedor. GraphQL define el contrato de la API, y el resolver es el que hace el findOne. Y con el token son dos candados: la API valida el token del usuario, y MongoDB pide su propio usuario y contraseña, con permisos por base.</aside>
+</section>
+
+<!-- 11 · GAINS / COSTS -->
+<section class="slide light" data-speaker="Mateo" data-time="8:15 – 9:00" data-title="Gana y cuesta">
+  <div class="kicker rv">04 · Ventajas y límites</div>
+  <div class="ledger">
+    <div class="rv" style="--d:.15s"><h3>Qué gana</h3><dl>
+      <dt>Flexibilidad</dt><dd>El modelo cambia con la app, sin rehacer tablas.</dd>
+      <dt>Menos JOINs</dt><dd>Lo que se lee junto llega en una consulta.</dd>
+      <dt>Nube gestionada</dt><dd>Atlas aloja el servidor; la API solo necesita la cadena.</dd></dl></div>
+    <div class="cost fx-up" data-step="1"><h3>Qué cuesta</h3><dl>
+      <dt>Diseño previo</dt><dd>Se modela según cómo la app lee los datos.</dd>
+      <dt>Disciplina</dt><dd>La validación es opcional: si nadie la define, nadie la exige.</dd>
+      <dt>Plan gratuito</dt><dd>Sirve para clase, no para producción.</dd></dl></div>
+  </div>
+  <div class="stats fx-up" data-step="2">
+    <div class="lead">Atlas · cluster gratuito (M0)</div>
+    <div><b>0.5 GB</b><span>almacenamiento</span></div>
+    <div><b>100</b><span>operaciones / segundo</span></div>
+    <div><b>500</b><span>conexiones máximas</span></div>
+  </div>
+  <div class="pfoot"><span>Equipo 5 · MongoDB</span><span>11</span></div>
+  <aside class="notes">¿Qué gana el equipo? Flexibilidad, porque el modelo cambia con la app sin rehacer tablas; menos JOINs, porque lo que se lee junto llega en una consulta; y un servidor administrado en Atlas. [AVANZAR] ¿Qué cuesta? Hay que diseñar pensando en cómo la app lee los datos; la validación es opcional, así que si nadie la define, nadie la exige; [AVANZAR] y el plan gratuito tiene límites: medio gigabyte, cien operaciones por segundo y quinientas conexiones. Para clase sobra; para producción no.</aside>
+</section>
+
+<!-- 12 · WHEN NOT -->
+<section class="slide light" data-speaker="Mateo" data-time="9:00 – 9:35" data-title="Cuándo no conviene">
+  <div class="kicker rv">04 · Cuándo no conviene</div>
+  <h2 class="rv" style="--d:.1s">¿Documentos <em>o tablas?</em></h2>
+  <div class="spec rv" style="--d:.2s">
+    <div class="ends"><span>Conviene MongoDB</span><span>Mejor relacional</span></div>
+    <div class="axis"></div>
+  </div>
+  <div class="cases">
+    <div class="col">
+      <div class="case yes rv" style="--d:.5s"><h4>Catálogos</h4><p>Productos con atributos distintos por tipo.</p></div>
+      <div class="case yes rv" style="--d:.6s"><h4>Datos que cambian de forma</h4><p>Perfiles, preferencias, registros de eventos.</p></div>
+    </div>
+    <div class="col">
+      <div class="case no fx-up" data-step="1"><h4>Muchas relaciones</h4><p>Alumnos, materias, grupos y calificaciones: JOIN en casi cada consulta.</p></div>
+      <div class="case no fx-up" data-step="1" style="transition-delay:.12s"><h4>Transacciones como núcleo</h4><p>Pagos sobre muchos registros a la vez. Mongo las tiene; relacional es lo natural.</p></div>
+    </div>
+  </div>
+  <div class="pfoot"><span>Equipo 5 · MongoDB</span><span>12</span></div>
+  <aside class="notes">¿Cuándo sí y cuándo no? Del lado izquierdo, lo que le queda natural: catálogos con atributos distintos, y datos que cambian de forma como perfiles o registros de eventos. [AVANZAR] Del lado derecho, mejor una base relacional: cuando los datos son muy relacionales, como inscripciones que ligan alumnos, materias, grupos y calificaciones; y cuando el corazón del sistema son transacciones sobre muchos registros, como pagos. MongoDB sí tiene transacciones, pero si son el centro del sistema, lo natural es relacional.</aside>
+</section>
+
+<!-- 13 · SOURCES -->
+<section class="slide light" data-speaker="Mateo" data-time="9:35 – 9:50" data-title="Fuentes">
+  <div class="kicker rv">04 · Fuentes consultadas</div>
+  <ol class="srcs">
+    <li class="rv" style="--d:.15s"><div><h4>Get Started with the Node.js Driver</h4><p>MongoDB Docs · instalación, Atlas, usuario y cadena de conexión</p><a>mongodb.com/docs/drivers/node/current/get-started/</a></div></li>
+    <li class="rv" style="--d:.25s"><div><h4>Data Modeling in MongoDB</h4><p>MongoDB Docs · esquema flexible, embeber y referenciar</p><a>mongodb.com/docs/manual/data-modeling/</a></div></li>
+    <li class="rv" style="--d:.35s"><div><h4>Connecting to MongoDB in Node.js</h4><p>MongoDB University · uso del driver y del MongoClient</p><a>learn.mongodb.com/courses/connecting-to-mongodb-in-nodejs</a></div></li>
+    <li class="rv" style="--d:.45s"><div><h4>Atlas Free Cluster Limits</h4><p>MongoDB Docs · límites del cluster gratuito, consultado el 25 de octubre de 2026</p><a>mongodb.com/docs/atlas/reference/free-shared-limitations/</a></div></li>
+  </ol>
+  <div class="pfoot"><span>Equipo 5 · MongoDB</span><span>13</span></div>
+  <aside class="notes">Todo lo que presentamos sale de la documentación oficial de MongoDB y de su curso en MongoDB University. Los enlaces completos están en el reporte y en el repositorio.</aside>
+</section>
+
+<!-- 14 · CLOSE -->
+<section class="slide dark close" data-speaker="Todos" data-time="9:50 – 10:00" data-title="Preguntas">
+  <h2 class="rv">¿Preguntas?</h2>
+  <p class="take rv" style="--d:.3s">Guarden los datos con <mark>la forma en que su API los lee.</mark></p>
+  <div class="repo rv" style="--d:.6s">github.com/Joako601/Exposicion-Backend_Equipo5</div>
+  <aside class="notes">En resumen: guarden los datos con la forma en que su API los lee. Gracias. ¿Preguntas?</aside>
+</section>
+
+<div id="foot"><span>Equipo 5 · MongoDB</span><span class="who"><span class="dot"></span><span id="who"></span><span id="num"></span></span></div>
+<div id="bar"></div>
+</div>
+<div id="hint">← → avanzar · P presentador · F pantalla completa</div>
+
+<script>
+const stage = document.getElementById('stage');
+const slides = [...document.querySelectorAll('.slide')];
+const isStatic = new URLSearchParams(location.search).has('static');
+if (isStatic) document.body.classList.add('static');
+let i = 0, step = 0, presenter = null, t0 = null;
+
+const maxStep = s => Math.max(0, ...[...s.querySelectorAll('[data-step]')].map(e => +e.dataset.step));
+
+function fit() {
+  const k = Math.min(innerWidth / 1920, innerHeight / 1080);
+  stage.style.transform = `translate(-50%,-50%) scale(${k})`;
+}
+
+function render() {
+  const s = slides[i];
+  slides.forEach((el, k) => { el.classList.toggle('active', k === i); el.classList.toggle('past', k < i); });
+  s.querySelectorAll('[data-step]').forEach(e => e.classList.toggle('on', +e.dataset.step <= step));
+  // code slide: highlight the lines that belong to the current note
+  const ed = s.querySelector('#ed');
+  if (ed) {
+    ed.classList.toggle('focus', step > 0);
+    ed.querySelectorAll('.ln').forEach(l => l.classList.toggle('hit', +l.dataset.l === step));
+  }
+  const foot = document.getElementById('foot');
+  const edge = i === 0 || i === slides.length - 1;
+  foot.classList.toggle('ondark', s.classList.contains('dark'));
+  foot.classList.toggle('hide', edge);
+  document.getElementById('bar').classList.toggle('hide', edge);
+  document.getElementById('who').textContent = s.dataset.speaker;
+  document.getElementById('num').textContent = String(i + 1).padStart(2, '0') + ' / ' + slides.length;
+  document.getElementById('bar').style.width = ((i + 1) / slides.length * 100) + '%';
+  history.replaceState(null, '', location.search + '#' + (i + 1));
+  updatePresenter();
+}
+
+function next() {
+  if (step < maxStep(slides[i])) step++;
+  else if (i < slides.length - 1) { i++; step = 0; }
+  render();
+}
+function prev() {
+  if (step > 0) step--;
+  else if (i > 0) { i--; step = maxStep(slides[i]); }
+  render();
+}
+
+// Presenter view: a second window with the script, next slide and a timer.
+function openPresenter() {
+  presenter = window.open('', 'presenter', 'width=900,height=640');
+  if (!presenter) return alert('Permite ventanas emergentes para la vista de presentador.');
+  t0 ??= Date.now();
+  presenter.document.body.innerHTML = '';
+  presenter.document.title = 'Presentador · Equipo 5';
+  presenter.document.body.style.cssText = 'margin:0;padding:28px 34px;background:#001E2B;color:#E6F3EE;font:22px/1.5 "IBM Plex Sans",Segoe UI,sans-serif';
+  presenter.onkeydown = onKey;
+  updatePresenter();
+}
+function updatePresenter() {
+  if (!presenter || presenter.closed) return;
+  const s = slides[i], n = slides[i + 1];
+  const el = Math.floor((Date.now() - (t0 ?? Date.now())) / 1000);
+  const clock = `${Math.floor(el / 60)}:${String(el % 60).padStart(2, '0')}`;
+  const notes = (s.querySelector('.notes')?.textContent ?? '')
+    .replace(/\[(.+?)\]/g, '<b style="color:#00ED64">[$1]</b>');
+  presenter.document.body.innerHTML = `
+    <div style="display:flex;justify-content:space-between;font:600 15px Consolas,monospace;letter-spacing:.1em;color:#8FB3A6;text-transform:uppercase">
+      <span>${i + 1}/${slides.length} · ${s.dataset.title} · paso ${step}/${maxStep(s)}</span><span>${s.dataset.time}</span></div>
+    <div style="font:700 44px/1.1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin:14px 0 4px;color:#00ED64">${s.dataset.speaker}</div>
+    <div style="font:800 64px/1 'Barlow Condensed',sans-serif;margin:8px 0 18px">${clock}</div>
+    <p style="margin:0 0 24px">${notes}</p>
+    <div style="font:15px Consolas,monospace;color:#8FB3A6">SIGUE → ${n ? n.dataset.title + ' (' + n.dataset.speaker + ')' : 'fin'}</div>`;
+}
+setInterval(updatePresenter, 1000);
+
+function onKey(e) {
+  if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); next(); }
+  else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); prev(); }
+  else if (e.key === 'Home') { i = 0; step = 0; render(); }
+  else if (e.key === 'End') { i = slides.length - 1; step = 0; render(); }
+  else if (e.key.toLowerCase() === 'p') openPresenter();
+  else if (e.key.toLowerCase() === 'f') document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+  else if (e.key.toLowerCase() === 't') t0 = Date.now();
+}
+
+addEventListener('keydown', onKey);
+addEventListener('resize', fit);
+stage.addEventListener('click', e => (e.clientX > innerWidth / 3 ? next() : prev()));
+
+i = Math.min(Math.max(parseInt(location.hash.slice(1)) - 1 || 0, 0), slides.length - 1);
+if (isStatic) step = maxStep(slides[i]);
+fit();
+render();
+</script>
+</body>
+</html>
