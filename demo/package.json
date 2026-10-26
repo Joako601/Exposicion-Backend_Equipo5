@@ -1,0 +1,14 @@
+{
+  "name": "equipo5-mongodb-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "demo": "node pasos.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "mongodb": "^7.0.0"
+  }
+}
